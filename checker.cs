@@ -1,55 +1,66 @@
-﻿using System;
+using System;
 using System.Threading;
 
-class Checker
+namespace healthchecker
 {
-    // --- Pure functions for vital checks --- //
-    public static bool IsTemperatureOk(float temp) => temp >= 95 && temp <= 102;
-    public static bool IsPulseOk(int pulse) => pulse >= 60 && pulse <= 100;
-    public static bool IsSpo2Ok(int spo2) => spo2 >= 90;
-
-    // --- Alert functions --- //
-    private static void BlinkAlert(int duration = 6)
+    public static class Checker
     {
-        for (int i = 0; i < duration; i++)
+        // --- Pure functions for vital checks --- //
+        public static bool IsTemperatureOk(double temp)
         {
-            Console.Write("\r* ");
-            Thread.Sleep(1000);
-            Console.Write("\r *");
-            Thread.Sleep(1000);
-        }
-        Console.WriteLine();
-    }
-
-    private static void PrintAlert(string message)
-    {
-        Console.WriteLine(message);
-        BlinkAlert();
-    }
-
-    // --- Main vitals check --- //
-    public static bool VitalsOk(float temperature, int pulseRate, int spo2)
-    {
-        if (!IsTemperatureOk(temperature))
-        {
-            PrintAlert("Temperature critical!");
-            return false;
+            return temp >= 95 && temp <= 102;
         }
 
-        if (!IsPulseOk(pulseRate))
+        public static bool IsPulseOk(int pulse)
         {
-            PrintAlert("Pulse Rate is out of range!");
-            return false;
+            return pulse >= 60 && pulse <= 100;
         }
 
-        if (!IsSpo2Ok(spo2))
+        public static bool IsSpo2Ok(int spo2)
         {
-            PrintAlert("Oxygen Saturation out of range!");
-            return false;
+            return spo2 >= 90;
         }
 
-        Console.WriteLine("Vitals received within normal range");
-        Console.WriteLine($"Temperature: {temperature}, Pulse: {pulseRate}, SpO2: {spo2}");
-        return true;
+        // --- Alert functions (side effects separated) --- //
+        public static void BlinkAlert(int duration = 6)
+        {
+            for (int i = 0; i < duration; i++)
+            {
+                Console.Write("\r* ");
+                Thread.Sleep(1000);
+                Console.Write("\r *");
+                Thread.Sleep(1000);
+            }
+            Console.WriteLine();
+        }
+
+        public static void PrintAlert(string message)
+        {
+            Console.WriteLine(message);
+            BlinkAlert();
+        }
+
+        // --- Mapping vital checkers to messages --- //
+        public static bool VitalsOk(double temperature, int pulseRate, int spo2, Action<string>? alertFunc = null)
+        {
+            alertFunc ??= PrintAlert;
+
+            if (!IsTemperatureOk(temperature))
+            {
+                alertFunc("Temperature critical!");
+                return false;
+            }
+            if (!IsPulseOk(pulseRate))
+            {
+                alertFunc("Pulse Rate is out of range!");
+                return false;
+            }
+            if (!IsSpo2Ok(spo2))
+            {
+                alertFunc("Oxygen Saturation out of range!");
+                return false;
+            }
+            return true;
+        }
     }
 }
