@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-public static class Checker
+class Checker
 {
     // --- Pure functions for vital checks --- //
     public static bool IsTemperatureOk(float temp) => temp >= 95 && temp <= 102;
