@@ -1,66 +1,76 @@
 using System;
 using System.Threading;
 
-namespace healthchecker
+public class Checker
 {
-    public static class Checker
+    // Pure function that checks vitals and returns a result
+    public static VitalStatus EvaluateVitals(float temperature, int pulseRate, int spo2)
     {
-        // --- Pure functions for vital checks --- //
-        public static bool IsTemperatureOk(double temp)
+        if (temperature > 102 || temperature < 95)
         {
-            return temp >= 95 && temp <= 102;
+            return VitalStatus.TemperatureOutOfRange;
         }
-
-        public static bool IsPulseOk(int pulse)
+        if (pulseRate < 60 || pulseRate > 100)
         {
-            return pulse >= 60 && pulse <= 100;
+            return VitalStatus.PulseOutOfRange;
         }
-
-        public static bool IsSpo2Ok(int spo2)
+        if (spo2 < 90)
         {
-            return spo2 >= 90;
+            return VitalStatus.OxygenOutOfRange;
         }
-
-        // --- Alert functions (side effects separated) --- //
-        public static void BlinkAlert(int duration = 6)
-        {
-            for (int i = 0; i < duration; i++)
-            {
-                Console.Write("\r* ");
-                Thread.Sleep(1000);
-                Console.Write("\r *");
-                Thread.Sleep(1000);
-            }
-            Console.WriteLine();
-        }
-
-        public static void PrintAlert(string message)
-        {
-            Console.WriteLine(message);
-            BlinkAlert();
-        }
-
-        // --- Mapping vital checkers to messages --- //
-        public static bool VitalsOk(double temperature, int pulseRate, int spo2, Action<string>? alertFunc = null)
-        {
-            alertFunc ??= PrintAlert;
-
-            if (!IsTemperatureOk(temperature))
-            {
-                alertFunc("Temperature critical!");
-                return false;
-            }
-            if (!IsPulseOk(pulseRate))
-            {
-                alertFunc("Pulse Rate is out of range!");
-                return false;
-            }
-            if (!IsSpo2Ok(spo2))
-            {
-                alertFunc("Oxygen Saturation out of range!");
-                return false;
-            }
-            return true;
-        }
+        return VitalStatus.Normal;
     }
+
+    // Handles side effects (I/O + blinking)
+    public static bool VitalsOk(float temperature, int pulseRate, int spo2)
+    {
+        var status = EvaluateVitals(temperature, pulseRate, spo2);
+
+        switch (status)
+        {
+            case VitalStatus.TemperatureOutOfRange:
+                ReportIssue("Temperature critical!");
+                return false;
+
+            case VitalStatus.PulseOutOfRange:
+                ReportIssue("Pulse Rate is out of range!");
+                return false;
+
+            case VitalStatus.OxygenOutOfRange:
+                ReportIssue("Oxygen Saturation out of range!");
+                return false;
+
+            case VitalStatus.Normal:
+                Console.WriteLine("Vitals received within normal range");
+                Console.WriteLine("Temperature: {0}, Pulse: {1}, SO2: {2}", temperature, pulseRate, spo2);
+                return true;
+        }
+        return true;
+    }
+
+    private static void ReportIssue(string message)
+    {
+        Console.WriteLine(message);
+        BlinkAlert(6, 1000);
+    }
+
+    private static void BlinkAlert(int times, int intervalMs)
+    {
+        for (int i = 0; i < times; i++)
+        {
+            Console.Write("\r* ");
+            Thread.Sleep(intervalMs);
+            Console.Write("\r *");
+            Thread.Sleep(intervalMs);
+        }
+        Console.WriteLine();
+    }
+}
+
+public enum VitalStatus
+{
+    Normal,
+    TemperatureOutOfRange,
+    PulseOutOfRange,
+    OxygenOutOfRange
 }
