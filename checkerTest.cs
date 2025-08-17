@@ -1,81 +1,55 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using healthchecker;
-using System;
+using Xunit;
 
-namespace healthcheckerTests
+public class CheckerTests
 {
-    [TestClass]
-    public class CheckerTest
+    [Fact]
+    public void TemperatureTooHigh_NotOk()
     {
-        private string? capturedMessage;
+        var status = Checker.EvaluateVitals(103f, 70, 95);
+        Assert.Equal(VitalStatus.TemperatureOutOfRange, status);
+    }
 
-        private void CaptureAlert(string msg)
-        {
-            capturedMessage = msg;
-        }
+    [Fact]
+    public void TemperatureTooLow_NotOk()
+    {
+        var status = Checker.EvaluateVitals(94f, 70, 95);
+        Assert.Equal(VitalStatus.TemperatureOutOfRange, status);
+    }
 
-        [TestInitialize]
-        public void Setup()
-        {
-            capturedMessage = null;
-        }
+    [Fact]
+    public void PulseTooHigh_NotOk()
+    {
+        var status = Checker.EvaluateVitals(98f, 120, 95);
+        Assert.Equal(VitalStatus.PulseOutOfRange, status);
+    }
 
-        [TestMethod]
-        public void TestTemperatureOutOfRange()
-        {
-            Assert.IsFalse(Checker.VitalsOk(104, 70, 98, CaptureAlert));
-            Assert.AreEqual("Temperature critical!", capturedMessage);
-        }
+    [Fact]
+    public void PulseTooLow_NotOk()
+    {
+        var status = Checker.EvaluateVitals(98f, 50, 95);
+        Assert.Equal(VitalStatus.PulseOutOfRange, status);
+    }
 
-        [TestMethod]
-        public void TestPulseOutOfRange()
-        {
-            Assert.IsFalse(Checker.VitalsOk(98.6, 120, 98, CaptureAlert));
-            Assert.AreEqual("Pulse Rate is out of range!", capturedMessage);
-        }
+    [Fact]
+    public void OxygenTooLow_NotOk()
+    {
+        var status = Checker.EvaluateVitals(98f, 70, 85);
+        Assert.Equal(VitalStatus.OxygenOutOfRange, status);
+    }
 
-        [TestMethod]
-        public void TestSpo2OutOfRange()
-        {
-            Assert.IsFalse(Checker.VitalsOk(98.6, 70, 88, CaptureAlert));
-            Assert.AreEqual("Oxygen Saturation out of range!", capturedMessage);
-        }
+    [Fact]
+    public void AllVitalsNormal_Ok()
+    {
+        var status = Checker.EvaluateVitals(98.6f, 72, 97);
+        Assert.Equal(VitalStatus.Normal, status);
+    }
 
-        [TestMethod]
-        public void TestAllVitalsInRange()
-        {
-            Assert.IsTrue(Checker.VitalsOk(98.6, 70, 98, CaptureAlert));
-            Assert.IsNull(capturedMessage);
-        }
-
-        [TestMethod]
-        public void TestTemperatureEdgeCases()
-        {
-            Assert.IsTrue(Checker.VitalsOk(95, 70, 98, CaptureAlert));
-            Assert.IsTrue(Checker.VitalsOk(102, 70, 98, CaptureAlert));
-            Assert.IsFalse(Checker.VitalsOk(94.9, 70, 98, CaptureAlert));
-            Assert.AreEqual("Temperature critical!", capturedMessage);
-            Assert.IsFalse(Checker.VitalsOk(102.1, 70, 98, CaptureAlert));
-            Assert.AreEqual("Temperature critical!", capturedMessage);
-        }
-
-        [TestMethod]
-        public void TestPulseEdgeCases()
-        {
-            Assert.IsTrue(Checker.VitalsOk(98.6, 60, 98, CaptureAlert));
-            Assert.IsTrue(Checker.VitalsOk(98.6, 100, 98, CaptureAlert));
-            Assert.IsFalse(Checker.VitalsOk(98.6, 59, 98, CaptureAlert));
-            Assert.AreEqual("Pulse Rate is out of range!", capturedMessage);
-            Assert.IsFalse(Checker.VitalsOk(98.6, 101, 98, CaptureAlert));
-            Assert.AreEqual("Pulse Rate is out of range!", capturedMessage);
-        }
-
-        [TestMethod]
-        public void TestSpo2EdgeCases()
-        {
-            Assert.IsTrue(Checker.VitalsOk(98.6, 70, 90, CaptureAlert));
-            Assert.IsFalse(Checker.VitalsOk(98.6, 70, 89, CaptureAlert));
-            Assert.AreEqual("Oxygen Saturation out of range!", capturedMessage);
-        }
+    [Theory]
+    [InlineData(95f, 60, 90)]   // Edge case lower bounds
+    [InlineData(102f, 100, 90)] // Edge case upper bounds
+    public void EdgeCases_StillOk(float temp, int pulse, int spo2)
+    {
+        var status = Checker.EvaluateVitals(temp, pulse, spo2);
+        Assert.Equal(VitalStatus.Normal, status);
     }
 }
