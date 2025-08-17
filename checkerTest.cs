@@ -1,57 +1,81 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using healthchecker;
+using System;
 
-namespace VitalCheckerTests
+namespace healthcheckerTests
 {
     [TestClass]
-    public class CheckerTests
+    public class CheckerTest
     {
-        [TestMethod]
-        public void NotOkWhenTemperatureOutOfRange()
+        private string? capturedMessage;
+
+        private void CaptureAlert(string msg)
         {
-            Assert.IsFalse(Checker.VitalsOk(104f, 70, 98));
+            capturedMessage = msg;
+        }
+
+        [TestInitialize]
+        public void Setup()
+        {
+            capturedMessage = null;
         }
 
         [TestMethod]
-        public void NotOkWhenPulseOutOfRange()
+        public void TestTemperatureOutOfRange()
         {
-            Assert.IsFalse(Checker.VitalsOk(98.6f, 120, 98));
+            Assert.IsFalse(Checker.VitalsOk(104, 70, 98, CaptureAlert));
+            Assert.AreEqual("Temperature critical!", capturedMessage);
         }
 
         [TestMethod]
-        public void NotOkWhenSpo2OutOfRange()
+        public void TestPulseOutOfRange()
         {
-            Assert.IsFalse(Checker.VitalsOk(98.6f, 70, 85));
+            Assert.IsFalse(Checker.VitalsOk(98.6, 120, 98, CaptureAlert));
+            Assert.AreEqual("Pulse Rate is out of range!", capturedMessage);
         }
 
         [TestMethod]
-        public void OkWhenAllVitalsInRange()
+        public void TestSpo2OutOfRange()
         {
-            Assert.IsTrue(Checker.VitalsOk(98.6f, 70, 98));
+            Assert.IsFalse(Checker.VitalsOk(98.6, 70, 88, CaptureAlert));
+            Assert.AreEqual("Oxygen Saturation out of range!", capturedMessage);
         }
 
         [TestMethod]
-        public void TemperatureEdgeCases()
+        public void TestAllVitalsInRange()
         {
-            Assert.IsTrue(Checker.VitalsOk(95f, 70, 98));
-            Assert.IsTrue(Checker.VitalsOk(102f, 70, 98));
-            Assert.IsFalse(Checker.VitalsOk(94.9f, 70, 98));
-            Assert.IsFalse(Checker.VitalsOk(102.1f, 70, 98));
+            Assert.IsTrue(Checker.VitalsOk(98.6, 70, 98, CaptureAlert));
+            Assert.IsNull(capturedMessage);
         }
 
         [TestMethod]
-        public void PulseEdgeCases()
+        public void TestTemperatureEdgeCases()
         {
-            Assert.IsTrue(Checker.VitalsOk(98.6f, 60, 98));
-            Assert.IsTrue(Checker.VitalsOk(98.6f, 100, 98));
-            Assert.IsFalse(Checker.VitalsOk(98.6f, 59, 98));
-            Assert.IsFalse(Checker.VitalsOk(98.6f, 101, 98));
+            Assert.IsTrue(Checker.VitalsOk(95, 70, 98, CaptureAlert));
+            Assert.IsTrue(Checker.VitalsOk(102, 70, 98, CaptureAlert));
+            Assert.IsFalse(Checker.VitalsOk(94.9, 70, 98, CaptureAlert));
+            Assert.AreEqual("Temperature critical!", capturedMessage);
+            Assert.IsFalse(Checker.VitalsOk(102.1, 70, 98, CaptureAlert));
+            Assert.AreEqual("Temperature critical!", capturedMessage);
         }
 
         [TestMethod]
-        public void Spo2EdgeCases()
+        public void TestPulseEdgeCases()
         {
-            Assert.IsTrue(Checker.VitalsOk(98.6f, 70, 90));
-            Assert.IsFalse(Checker.VitalsOk(98.6f, 70, 89));
+            Assert.IsTrue(Checker.VitalsOk(98.6, 60, 98, CaptureAlert));
+            Assert.IsTrue(Checker.VitalsOk(98.6, 100, 98, CaptureAlert));
+            Assert.IsFalse(Checker.VitalsOk(98.6, 59, 98, CaptureAlert));
+            Assert.AreEqual("Pulse Rate is out of range!", capturedMessage);
+            Assert.IsFalse(Checker.VitalsOk(98.6, 101, 98, CaptureAlert));
+            Assert.AreEqual("Pulse Rate is out of range!", capturedMessage);
+        }
+
+        [TestMethod]
+        public void TestSpo2EdgeCases()
+        {
+            Assert.IsTrue(Checker.VitalsOk(98.6, 70, 90, CaptureAlert));
+            Assert.IsFalse(Checker.VitalsOk(98.6, 70, 89, CaptureAlert));
+            Assert.AreEqual("Oxygen Saturation out of range!", capturedMessage);
         }
     }
 }
