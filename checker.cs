@@ -3,53 +3,47 @@ using System.Threading;
 
 public class Checker
 {
-    // Pure function that checks vitals and returns a result
+    //  Pure function (CC = 2)
     public static VitalStatus EvaluateVitals(float temperature, int pulseRate, int spo2)
     {
-        if (temperature > 102 || temperature < 95)
-        {
+        if (!(temperature >= 95 && temperature <= 102))
             return VitalStatus.TemperatureOutOfRange;
-        }
-        if (pulseRate < 60 || pulseRate > 100)
-        {
+
+        if (!(pulseRate >= 60 && pulseRate <= 100))
             return VitalStatus.PulseOutOfRange;
-        }
+
         if (spo2 < 90)
-        {
             return VitalStatus.OxygenOutOfRange;
-        }
+
         return VitalStatus.Normal;
     }
 
-    // Handles side effects (I/O + blinking)
+    // I/O handling, separated from logic (CC = 2)
     public static bool VitalsOk(float temperature, int pulseRate, int spo2)
     {
         var status = EvaluateVitals(temperature, pulseRate, spo2);
 
-        switch (status)
+        if (status == VitalStatus.Normal)
         {
-            case VitalStatus.TemperatureOutOfRange:
-                ReportIssue("Temperature critical!");
-                return false;
-
-            case VitalStatus.PulseOutOfRange:
-                ReportIssue("Pulse Rate is out of range!");
-                return false;
-
-            case VitalStatus.OxygenOutOfRange:
-                ReportIssue("Oxygen Saturation out of range!");
-                return false;
-
-            case VitalStatus.Normal:
-                Console.WriteLine("Vitals received within normal range");
-                Console.WriteLine("Temperature: {0}, Pulse: {1}, SO2: {2}", temperature, pulseRate, spo2);
-                return true;
+            Console.WriteLine("Vitals received within normal range");
+            Console.WriteLine("Temperature: {0}, Pulse: {1}, SO2: {2}", temperature, pulseRate, spo2);
+            return true;
         }
-        return true;
+
+        ReportIssue(status);
+        return false;
     }
 
-    private static void ReportIssue(string message)
+    private static void ReportIssue(VitalStatus status)
     {
+        string message = status switch
+        {
+            VitalStatus.TemperatureOutOfRange => "Temperature critical!",
+            VitalStatus.PulseOutOfRange       => "Pulse Rate is out of range!",
+            VitalStatus.OxygenOutOfRange      => "Oxygen Saturation out of range!",
+            _                                 => "Unknown issue"
+        };
+
         Console.WriteLine(message);
         BlinkAlert(6, 1000);
     }
